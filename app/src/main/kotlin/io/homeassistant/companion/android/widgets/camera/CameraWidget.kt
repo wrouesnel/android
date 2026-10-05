@@ -25,6 +25,7 @@ import io.homeassistant.companion.android.common.util.FailFast
 import io.homeassistant.companion.android.database.widget.CameraWidgetDao
 import io.homeassistant.companion.android.database.widget.CameraWidgetEntity
 import io.homeassistant.companion.android.database.widget.WidgetTapAction
+import io.homeassistant.companion.android.database.widget.moveToRestoredWidgetIds
 import io.homeassistant.companion.android.frontend.navigation.FrontendTarget
 import io.homeassistant.companion.android.launch.intentLaunchWithNavigateTo
 import io.homeassistant.companion.android.util.hasActiveConnection
@@ -208,6 +209,15 @@ class CameraWidget : AppWidgetProvider() {
     private suspend fun retrieveCameraImageUrl(serverId: Int, entityId: String): String? {
         val entity = serverManager.integrationRepository(serverId).getEntity(entityId)
         return entity?.attributes?.get("entity_picture")?.toString()
+    }
+
+    override fun onRestored(context: Context, oldWidgetIds: IntArray, newWidgetIds: IntArray) {
+        widgetScope.launch {
+            cameraWidgetDao.moveToRestoredWidgetIds(oldWidgetIds, newWidgetIds)
+            // Android calls onUpdate right after this, possibly before the configuration has moved,
+            // so redraw the widgets once it has.
+            onUpdate(context, AppWidgetManager.getInstance(context), newWidgetIds)
+        }
     }
 
     override fun onReceive(context: Context, intent: Intent) {

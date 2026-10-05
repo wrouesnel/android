@@ -23,6 +23,7 @@ import io.homeassistant.companion.android.common.util.FailFast
 import io.homeassistant.companion.android.database.widget.TemplateWidgetDao
 import io.homeassistant.companion.android.database.widget.TemplateWidgetEntity
 import io.homeassistant.companion.android.database.widget.WidgetBackgroundType
+import io.homeassistant.companion.android.database.widget.moveToRestoredWidgetIds
 import io.homeassistant.companion.android.util.getAttribute
 import io.homeassistant.companion.android.widgets.ACTION_APPWIDGET_CREATED
 import io.homeassistant.companion.android.widgets.BaseWidgetProvider.Companion.UPDATE_WIDGETS
@@ -86,6 +87,15 @@ class TemplateWidget : AppWidgetProvider() {
                 widgetJobs[it]?.cancel()
                 widgetJobs.remove(it)
             }
+        }
+    }
+
+    override fun onRestored(context: Context, oldWidgetIds: IntArray, newWidgetIds: IntArray) {
+        widgetScope.launch {
+            templateWidgetDao.moveToRestoredWidgetIds(oldWidgetIds, newWidgetIds)
+            // Android calls onUpdate right after this, possibly before the configuration has moved,
+            // so redraw the widgets once it has.
+            onUpdate(context, AppWidgetManager.getInstance(context), newWidgetIds)
         }
     }
 

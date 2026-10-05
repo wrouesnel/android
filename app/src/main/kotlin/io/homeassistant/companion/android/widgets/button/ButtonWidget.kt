@@ -29,6 +29,7 @@ import io.homeassistant.companion.android.common.util.kotlinJsonMapper
 import io.homeassistant.companion.android.database.widget.ButtonWidgetDao
 import io.homeassistant.companion.android.database.widget.ButtonWidgetEntity
 import io.homeassistant.companion.android.database.widget.WidgetBackgroundType
+import io.homeassistant.companion.android.database.widget.moveToRestoredWidgetIds
 import io.homeassistant.companion.android.util.getAttribute
 import io.homeassistant.companion.android.widgets.ACTION_APPWIDGET_CREATED
 import io.homeassistant.companion.android.widgets.BaseWidgetProvider
@@ -109,12 +110,13 @@ class ButtonWidget : AppWidgetProvider() {
         }
     }
 
-    override fun onEnabled(context: Context) {
-        // Enter relevant functionality for when the first widget is created
-    }
-
-    override fun onDisabled(context: Context) {
-        // Enter relevant functionality for when the last widget is disabled
+    override fun onRestored(context: Context, oldWidgetIds: IntArray, newWidgetIds: IntArray) {
+        widgetScope.launch {
+            buttonWidgetDao.moveToRestoredWidgetIds(oldWidgetIds, newWidgetIds)
+            // Android calls onUpdate right after this, possibly before the configuration has moved,
+            // so redraw the widgets once it has.
+            onUpdate(context, AppWidgetManager.getInstance(context), newWidgetIds)
+        }
     }
 
     override fun onReceive(context: Context, intent: Intent) {

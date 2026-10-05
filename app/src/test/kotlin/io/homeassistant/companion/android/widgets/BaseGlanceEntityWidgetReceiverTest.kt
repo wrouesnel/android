@@ -218,6 +218,30 @@ class BaseGlanceEntityWidgetReceiverTest {
     }
 
     @Test
+    fun `Given restored widgets when onRestored is called then move their configuration to the new IDs and updateAll`() = runTest {
+        val context: Context = mockk()
+        val receiver = getReceiver()
+        val restoredEntity = TodoWidgetEntity(id = 11, serverId = 1, entityId = "todo.shopping")
+
+        coEvery { mockedDao.get(11) } returns restoredEntity
+        coJustRun { mockedDao.deleteAll(any()) }
+        coJustRun { mockedDao.add(any()) }
+        // Since `updateAll` is an extension we need to mockk static the whole file that contains it
+        mockkStatic("androidx.glance.appwidget.GlanceAppWidgetKt")
+        coJustRun { mockedWidget.updateAll(context) }
+
+        receiver.onRestored(context, intArrayOf(11), intArrayOf(84))
+
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) {
+            mockedDao.deleteAll(intArrayOf(11))
+            mockedDao.add(restoredEntity.copy(id = 84))
+            mockedWidget.updateAll(context)
+        }
+    }
+
+    @Test
     fun `Given valid intent with ACTION_SCREEN_OFF when onReceive is called with entities being watched then stop watching for entities changes`() = runTest {
         val context: Context = mockk()
         // We need a second scope that is going to be canceled that we can also control the advanceUntilIdle
