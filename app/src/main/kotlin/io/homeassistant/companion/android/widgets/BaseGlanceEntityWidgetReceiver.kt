@@ -17,7 +17,6 @@ import io.homeassistant.companion.android.common.util.FailFast
 import io.homeassistant.companion.android.common.util.SdkVersion
 import io.homeassistant.companion.android.database.widget.WidgetDao
 import io.homeassistant.companion.android.database.widget.WidgetEntity
-import io.homeassistant.companion.android.database.widget.moveToRestoredWidgetIds
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
@@ -170,7 +169,7 @@ abstract class BaseGlanceEntityWidgetReceiver<T : WidgetEntity<T>, DAO : WidgetD
 
     override fun onRestored(context: Context, oldWidgetIds: IntArray, newWidgetIds: IntArray) {
         widgetScope.launch {
-            dao.moveToRestoredWidgetIds(oldWidgetIds, newWidgetIds)
+            dao.restoreWidgets(context, oldWidgetIds, newWidgetIds)
             // Android calls onUpdate right after this, possibly before the configuration has moved,
             // so redraw the widgets once it has.
             glanceAppWidget.updateAll(context)

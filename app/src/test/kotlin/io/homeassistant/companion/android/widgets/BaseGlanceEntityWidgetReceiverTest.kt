@@ -239,8 +239,10 @@ class BaseGlanceEntityWidgetReceiverTest {
     }
 
     @Test
-    fun `Given restored widgets when onRestored is called then move their configuration to the new IDs and updateAll`() = runTest {
+    fun `Given restored widgets when onRestored is called then move their configuration to the new IDs, mark them restored and updateAll`() = runTest {
         val context: Context = mockk()
+        val appWidgetManager: AppWidgetManager = mockk(relaxed = true)
+        every { context.getSystemService(Context.APPWIDGET_SERVICE) } returns appWidgetManager
         val receiver = getReceiver()
         val restoredEntity = TodoWidgetEntity(id = 11, serverId = 1, entityId = "todo.shopping")
 
@@ -258,6 +260,7 @@ class BaseGlanceEntityWidgetReceiverTest {
         coVerify(exactly = 1) {
             mockedDao.deleteAll(intArrayOf(11))
             mockedDao.add(restoredEntity.copy(id = 84))
+            appWidgetManager.updateAppWidgetOptions(84, match { it.getBoolean("appWidgetRestoreCompleted") })
             mockedWidget.updateAll(context)
         }
     }

@@ -29,8 +29,9 @@ class WidgetDaoTest {
     fun `Given a restored widget when moving to restored widget IDs then its configuration is under the new ID only`() = runTest {
         val dao = FakeWidgetDao(widget(id = 11, entityId = "todo.shopping"))
 
-        dao.moveToRestoredWidgetIds(oldWidgetIds = intArrayOf(11), newWidgetIds = intArrayOf(84))
+        val restoredWidgetIds = dao.moveToRestoredWidgetIds(oldWidgetIds = intArrayOf(11), newWidgetIds = intArrayOf(84))
 
+        assertEquals(listOf(84), restoredWidgetIds)
         assertEquals(mapOf(84 to widget(id = 84, entityId = "todo.shopping")), dao.stored)
     }
 
@@ -50,8 +51,9 @@ class WidgetDaoTest {
     fun `Given restored widgets without configuration when moving to restored widget IDs then other widgets are untouched`() = runTest {
         val dao = FakeWidgetDao(widget(id = 5, entityId = "todo.restored"), widget(id = 7, entityId = "todo.other"))
 
-        dao.moveToRestoredWidgetIds(oldWidgetIds = intArrayOf(5, 6), newWidgetIds = intArrayOf(20, 21))
+        val restoredWidgetIds = dao.moveToRestoredWidgetIds(oldWidgetIds = intArrayOf(5, 6), newWidgetIds = intArrayOf(20, 21))
 
+        assertEquals(listOf(20), restoredWidgetIds)
         assertEquals(
             mapOf(20 to widget(id = 20, entityId = "todo.restored"), 7 to widget(id = 7, entityId = "todo.other")),
             dao.stored,
@@ -62,8 +64,9 @@ class WidgetDaoTest {
     fun `Given old and new widget ID lists of different sizes when moving to restored widget IDs then nothing changes`() = runTest {
         val dao = FakeWidgetDao(widget(id = 5, entityId = "todo.restored"))
 
-        dao.moveToRestoredWidgetIds(oldWidgetIds = intArrayOf(5), newWidgetIds = intArrayOf(20, 21))
+        val restoredWidgetIds = dao.moveToRestoredWidgetIds(oldWidgetIds = intArrayOf(5), newWidgetIds = intArrayOf(20, 21))
 
+        assertEquals(emptyList<Int>(), restoredWidgetIds)
         assertEquals(mapOf(5 to widget(id = 5, entityId = "todo.restored")), dao.stored)
     }
 }

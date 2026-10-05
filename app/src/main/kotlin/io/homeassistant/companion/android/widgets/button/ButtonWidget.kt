@@ -29,12 +29,12 @@ import io.homeassistant.companion.android.common.util.kotlinJsonMapper
 import io.homeassistant.companion.android.database.widget.ButtonWidgetDao
 import io.homeassistant.companion.android.database.widget.ButtonWidgetEntity
 import io.homeassistant.companion.android.database.widget.WidgetBackgroundType
-import io.homeassistant.companion.android.database.widget.moveToRestoredWidgetIds
 import io.homeassistant.companion.android.util.getAttribute
 import io.homeassistant.companion.android.widgets.ACTION_APPWIDGET_CREATED
 import io.homeassistant.companion.android.widgets.BaseWidgetProvider
 import io.homeassistant.companion.android.widgets.EXTRA_WIDGET_ENTITY
 import io.homeassistant.companion.android.widgets.common.WidgetAuthenticationActivity
+import io.homeassistant.companion.android.widgets.restoreWidgets
 import io.homeassistant.companion.android.widgets.staleWidgetIds
 import java.util.regex.Pattern
 import javax.inject.Inject
@@ -111,7 +111,7 @@ class ButtonWidget : AppWidgetProvider() {
 
     override fun onRestored(context: Context, oldWidgetIds: IntArray, newWidgetIds: IntArray) {
         widgetScope.launch {
-            buttonWidgetDao.moveToRestoredWidgetIds(oldWidgetIds, newWidgetIds)
+            buttonWidgetDao.restoreWidgets(context, oldWidgetIds, newWidgetIds)
             // Android calls onUpdate right after this, possibly before the configuration has moved,
             // so redraw the widgets once it has.
             onUpdate(context, AppWidgetManager.getInstance(context), newWidgetIds)

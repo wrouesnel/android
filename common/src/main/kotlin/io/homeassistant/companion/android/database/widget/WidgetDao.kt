@@ -17,16 +17,23 @@ interface WidgetDao<T : WidgetEntity<T>> {
  * Android gives restored widgets new IDs, for example after moving to a new device, and reports the mapping through
  * [android.appwidget.AppWidgetProvider.onRestored]. Widgets without a stored configuration are skipped. The two
  * lists may share IDs: every old configuration is read before anything is written.
+ *
+ * @return the new IDs of the widgets whose configuration was moved
  */
-suspend fun <T : WidgetEntity<T>> WidgetDao<T>.moveToRestoredWidgetIds(oldWidgetIds: IntArray, newWidgetIds: IntArray) {
+suspend fun <T : WidgetEntity<T>> WidgetDao<T>.moveToRestoredWidgetIds(
+    oldWidgetIds: IntArray,
+    newWidgetIds: IntArray,
+): List<Int> {
     if (oldWidgetIds.size != newWidgetIds.size) {
         Timber.w("Ignoring widget restore with ${oldWidgetIds.size} old IDs but ${newWidgetIds.size} new IDs")
-        return
+        return emptyList()
     }
     val restored = oldWidgetIds.zip(newWidgetIds).mapNotNull { (oldId, newId) ->
         get(oldId)?.copyWithWidgetId(newId)
     }
-    if (restored.isEmpty()) return
-    deleteAll(oldWidgetIds)
-    restored.forEach { add(it) }
+    if (restored.isNotEmpty()) {
+        deleteAll(oldWidgetIds)
+        restored.forEach { add(it) }
+    }
+    return restored.map { it.id }
 }

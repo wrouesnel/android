@@ -11,7 +11,6 @@ import io.homeassistant.companion.android.common.data.servers.ServerManager
 import io.homeassistant.companion.android.common.util.FailFast
 import io.homeassistant.companion.android.database.widget.WidgetDao
 import io.homeassistant.companion.android.database.widget.WidgetEntity
-import io.homeassistant.companion.android.database.widget.moveToRestoredWidgetIds
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -72,7 +71,7 @@ abstract class BaseWidgetProvider<T : WidgetEntity<T>, DAO : WidgetDao<T>> : App
 
     override fun onRestored(context: Context, oldWidgetIds: IntArray, newWidgetIds: IntArray) {
         widgetScope.launch {
-            dao.moveToRestoredWidgetIds(oldWidgetIds, newWidgetIds)
+            dao.restoreWidgets(context, oldWidgetIds, newWidgetIds)
             // Android calls onUpdate right after this, possibly before the configuration has moved,
             // so redraw the widgets once it has.
             onUpdate(context, AppWidgetManager.getInstance(context), newWidgetIds)
