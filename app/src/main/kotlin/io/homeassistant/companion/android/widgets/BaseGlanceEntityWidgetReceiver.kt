@@ -295,16 +295,17 @@ abstract class BaseGlanceEntityWidgetReceiver<T : WidgetEntity<T>, DAO : WidgetD
 
         val entitiesPerServer = getWidgetEntitiesByServer(context)
 
-        val invalidWidgetIds = entitiesPerServer.keys.minus(systemWidgetIds)
+        val widgetIdsToDelete = staleWidgetIds(entitiesPerServer.keys, systemWidgetIds.toSet())
 
-        if (invalidWidgetIds.isNotEmpty()) {
+        if (widgetIdsToDelete.isNotEmpty()) {
             Timber.tag(widgetClassName).i(
-                "Found widgets $invalidWidgetIds in database, but not in AppWidgetManager - removing it from the database.",
+                "Found widgets $widgetIdsToDelete in database, but not in AppWidgetManager - removing it from the database.",
             )
-            deleteWidgetsFromDatabase(invalidWidgetIds.toIntArray())
+            deleteWidgetsFromDatabase(widgetIdsToDelete.toIntArray())
         }
 
-        val entitiesPerServerWithoutInvalid = entitiesPerServer - invalidWidgetIds
+        // Configuration kept for a pending restore has no widget to watch for yet.
+        val entitiesPerServerWithoutInvalid = entitiesPerServer.filterKeys { it in systemWidgetIds }
 
         return entitiesPerServerWithoutInvalid
     }

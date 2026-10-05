@@ -28,6 +28,7 @@ import io.homeassistant.companion.android.util.getAttribute
 import io.homeassistant.companion.android.widgets.ACTION_APPWIDGET_CREATED
 import io.homeassistant.companion.android.widgets.BaseWidgetProvider.Companion.UPDATE_WIDGETS
 import io.homeassistant.companion.android.widgets.EXTRA_WIDGET_ENTITY
+import io.homeassistant.companion.android.widgets.staleWidgetIds
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -135,9 +136,10 @@ class TemplateWidget : AppWidgetProvider() {
 
     private suspend fun onScreenOn(context: Context) {
         if (!serverManager.isRegistered()) return
-        updateAllWidgets(context)
+        val systemWidgetIds = updateAllWidgets(context)
 
-        val allWidgets = templateWidgetDao.getAll()
+        // Configuration kept for a pending restore has no widget to watch for yet.
+        val allWidgets = templateWidgetDao.getAll().filter { it.id in systemWidgetIds }
         val widgetsWithDifferentTemplate = allWidgets.filter { it.template != widgetTemplates[it.id] }
         if (widgetsWithDifferentTemplate.isNotEmpty()) {
             widgetsWithDifferentTemplate.forEach { widget ->
@@ -174,14 +176,17 @@ class TemplateWidget : AppWidgetProvider() {
         widgetJobs.clear()
     }
 
-    private suspend fun updateAllWidgets(context: Context) {
-        val appWidgetManager = AppWidgetManager.getInstance(context) ?: return
+    /**
+     * Deletes the configuration of stale widgets, redraws the others and returns the IDs Android has for this provider.
+     */
+    private suspend fun updateAllWidgets(context: Context): Set<Int> {
+        val appWidgetManager = AppWidgetManager.getInstance(context) ?: return emptySet()
         val systemWidgetIds = appWidgetManager.getAppWidgetIds(
             ComponentName(context, TemplateWidget::class.java),
         ).toSet()
         val dbWidgetIds = templateWidgetDao.getAll().map { it.id }
 
-        val invalidWidgetIds = dbWidgetIds.minus(systemWidgetIds)
+        val invalidWidgetIds = staleWidgetIds(dbWidgetIds.toSet(), systemWidgetIds)
         if (invalidWidgetIds.isNotEmpty()) {
             Timber.i("Found widgets $invalidWidgetIds in database, but not in AppWidgetManager - sending onDeleted")
             onDeleted(context, invalidWidgetIds.toIntArray())
@@ -190,6 +195,7 @@ class TemplateWidget : AppWidgetProvider() {
         dbWidgetIds.filter { systemWidgetIds.contains(it) }.forEach {
             updateView(context, it)
         }
+        return systemWidgetIds
     }
 
     private suspend fun updateView(

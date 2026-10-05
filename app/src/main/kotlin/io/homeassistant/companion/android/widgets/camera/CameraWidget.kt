@@ -32,6 +32,7 @@ import io.homeassistant.companion.android.util.hasActiveConnection
 import io.homeassistant.companion.android.widgets.ACTION_APPWIDGET_CREATED
 import io.homeassistant.companion.android.widgets.BaseWidgetProvider.Companion.UPDATE_WIDGETS
 import io.homeassistant.companion.android.widgets.EXTRA_WIDGET_ENTITY
+import io.homeassistant.companion.android.widgets.staleWidgetIds
 import javax.inject.Inject
 import kotlin.math.sqrt
 import kotlinx.coroutines.CancellationException
@@ -88,9 +89,7 @@ class CameraWidget : AppWidgetProvider() {
         val systemWidgetIds = appWidgetManager.getAppWidgetIds(ComponentName(context, CameraWidget::class.java))
         val dbWidgetList = cameraWidgetDao.getAll()
 
-        val invalidWidgetIds = dbWidgetList
-            .filter { !systemWidgetIds.contains(it.id) }
-            .map { it.id }
+        val invalidWidgetIds = staleWidgetIds(dbWidgetList.map { it.id }.toSet(), systemWidgetIds.toSet())
         if (invalidWidgetIds.isNotEmpty()) {
             Timber.i("Found widgets $invalidWidgetIds in database, but not in AppWidgetManager - sending onDeleted")
             onDeleted(context, invalidWidgetIds.toIntArray())

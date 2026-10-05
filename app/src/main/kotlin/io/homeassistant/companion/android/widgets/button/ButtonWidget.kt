@@ -35,6 +35,7 @@ import io.homeassistant.companion.android.widgets.ACTION_APPWIDGET_CREATED
 import io.homeassistant.companion.android.widgets.BaseWidgetProvider
 import io.homeassistant.companion.android.widgets.EXTRA_WIDGET_ENTITY
 import io.homeassistant.companion.android.widgets.common.WidgetAuthenticationActivity
+import io.homeassistant.companion.android.widgets.staleWidgetIds
 import java.util.regex.Pattern
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.seconds
@@ -81,9 +82,7 @@ class ButtonWidget : AppWidgetProvider() {
         val systemWidgetIds = appWidgetManager.getAppWidgetIds(ComponentName(context, ButtonWidget::class.java))
         val dbWidgetList = buttonWidgetDao.getAll()
 
-        val invalidWidgetIds = dbWidgetList
-            .filter { !systemWidgetIds.contains(it.id) }
-            .map { it.id }
+        val invalidWidgetIds = staleWidgetIds(dbWidgetList.map { it.id }.toSet(), systemWidgetIds.toSet())
         if (invalidWidgetIds.isNotEmpty()) {
             Timber.i("Found widgets $invalidWidgetIds in database, but not in AppWidgetManager - sending onDeleted")
             onDeleted(context, invalidWidgetIds.toIntArray())

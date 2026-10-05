@@ -140,6 +140,27 @@ class BaseGlanceEntityWidgetReceiverTest {
     }
 
     @Test
+    fun `Given a widget without configuration pending restore when onReceive is called with ACTION_SCREEN_ON then it keeps the orphaned configuration`() = runTest {
+        val context: Context = mockk()
+        val intent = mockIntent(Intent.ACTION_SCREEN_ON)
+        val receiver = getReceiver(mapOf(11 to EntitiesPerServer(42, listOf("entity1"))))
+        val glanceIds = listOf<GlanceId>(FakeGlanceId(84))
+
+        serverRegistered()
+        coEvery { glanceManager.getGlanceIds(mockedWidget.javaClass) } returns glanceIds
+        every { glanceManager.getAppWidgetId(any()) } answers { firstArg<FakeGlanceId>().id }
+
+        receiver.onReceive(context, intent)
+
+        advanceUntilIdle()
+
+        coVerify(exactly = 0) {
+            mockedDao.deleteAll(any())
+            mockedServerManager.integrationRepository(any())
+        }
+    }
+
+    @Test
     fun `Given valid intent with ACTION_SCREEN_ON when onReceive is called with registered servers and multiple entities then it watch for changes and updates widgets`() = runTest {
         val context: Context = mockk()
         val intent = mockIntent(Intent.ACTION_SCREEN_ON)

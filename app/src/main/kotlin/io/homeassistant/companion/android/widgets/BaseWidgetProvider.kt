@@ -115,9 +115,10 @@ abstract class BaseWidgetProvider<T : WidgetEntity<T>, DAO : WidgetDao<T>> : App
 
     suspend fun onScreenOn(context: Context) {
         if (!serverManager.isRegistered()) return
-        updateAllWidgets(context)
+        val systemWidgetIds = updateAllWidgets(context)
 
-        val allWidgets = getAllWidgetIdsWithEntities(context)
+        // Configuration kept for a pending restore has no widget to watch for yet.
+        val allWidgets = getAllWidgetIdsWithEntities(context).filterKeys { it in systemWidgetIds }
         val widgetsWithDifferentEntities = allWidgets.filter { it.value.second != widgetEntities[it.key] }
         if (widgetsWithDifferentEntities.isNotEmpty()) {
             widgetsWithDifferentEntities.forEach { (id, pair) ->
@@ -155,13 +156,16 @@ abstract class BaseWidgetProvider<T : WidgetEntity<T>, DAO : WidgetDao<T>> : App
         widgetJobs.clear()
     }
 
-    private suspend fun updateAllWidgets(context: Context) {
+    /**
+     * Deletes the configuration of stale widgets, redraws the others and returns the IDs Android has for this provider.
+     */
+    private suspend fun updateAllWidgets(context: Context): Set<Int> {
         val widgetProvider = getWidgetProvider(context)
-        val appWidgetManager = AppWidgetManager.getInstance(context) ?: return
+        val appWidgetManager = AppWidgetManager.getInstance(context) ?: return emptySet()
         val systemWidgetIds = appWidgetManager.getAppWidgetIds(widgetProvider).toSet()
         val dbWidgetIds = getAllWidgetIdsWithEntities(context).keys
 
-        val invalidWidgetIds = dbWidgetIds.minus(systemWidgetIds)
+        val invalidWidgetIds = staleWidgetIds(dbWidgetIds, systemWidgetIds)
         if (invalidWidgetIds.isNotEmpty()) {
             Timber.tag(widgetProvider.shortClassName).i(
                 "Found widgets $invalidWidgetIds in database, but not in AppWidgetManager - sending onDeleted",
@@ -172,6 +176,7 @@ abstract class BaseWidgetProvider<T : WidgetEntity<T>, DAO : WidgetDao<T>> : App
         dbWidgetIds.filter { systemWidgetIds.contains(it) }.forEach {
             updateView(context, it)
         }
+        return systemWidgetIds
     }
 
     protected suspend fun updateView(
