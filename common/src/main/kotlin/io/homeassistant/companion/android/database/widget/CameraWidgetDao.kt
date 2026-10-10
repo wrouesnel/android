@@ -12,6 +12,12 @@ interface CameraWidgetDao : WidgetDao<CameraWidgetEntity> {
     @Query("SELECT * FROM camera_widgets WHERE id = :id")
     override suspend fun get(id: Int): CameraWidgetEntity?
 
+    @Query("SELECT DISTINCT server_id FROM camera_widgets")
+    override suspend fun getServerIds(): List<Int>
+
+    @Query("UPDATE camera_widgets SET server_id = :newServerId WHERE server_id = :oldServerId")
+    override suspend fun updateServerId(oldServerId: Int, newServerId: Int)
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     override suspend fun add(entity: CameraWidgetEntity)
 

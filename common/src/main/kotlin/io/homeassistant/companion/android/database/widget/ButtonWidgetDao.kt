@@ -11,6 +11,12 @@ interface ButtonWidgetDao : WidgetDao<ButtonWidgetEntity> {
     @Query("SELECT * FROM button_widgets WHERE id = :id")
     override suspend fun get(id: Int): ButtonWidgetEntity?
 
+    @Query("SELECT DISTINCT server_id FROM button_widgets")
+    override suspend fun getServerIds(): List<Int>
+
+    @Query("UPDATE button_widgets SET server_id = :newServerId WHERE server_id = :oldServerId")
+    override suspend fun updateServerId(oldServerId: Int, newServerId: Int)
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     override suspend fun add(entity: ButtonWidgetEntity)
 

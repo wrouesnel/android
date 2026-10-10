@@ -209,4 +209,10 @@ interface PrefsRepository {
     suspend fun getAllowedTags(): Set<String>
 
     suspend fun clearAllowedTags()
+
+    /** Returns the servers removed after a restore whose widgets haven't been pointed at a signed in server yet. */
+    suspend fun getRemovedRestoredServers(): List<RemovedRestoredServer>
+
+    /** Replaces the servers removed after a restore whose widgets haven't been pointed at a signed in server yet. */
+    suspend fun setRemovedRestoredServers(servers: List<RemovedRestoredServer>)
 }

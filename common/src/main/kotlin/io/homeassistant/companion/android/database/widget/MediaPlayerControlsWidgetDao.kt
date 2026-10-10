@@ -11,6 +11,12 @@ interface MediaPlayerControlsWidgetDao : WidgetDao<MediaPlayerControlsWidgetEnti
     @Query("SELECT * FROM media_player_controls_widgets WHERE id = :id")
     override suspend fun get(id: Int): MediaPlayerControlsWidgetEntity?
 
+    @Query("SELECT DISTINCT server_id FROM media_player_controls_widgets")
+    override suspend fun getServerIds(): List<Int>
+
+    @Query("UPDATE media_player_controls_widgets SET server_id = :newServerId WHERE server_id = :oldServerId")
+    override suspend fun updateServerId(oldServerId: Int, newServerId: Int)
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     override suspend fun add(entity: MediaPlayerControlsWidgetEntity)
 

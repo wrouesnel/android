@@ -12,6 +12,12 @@ interface TemplateWidgetDao : WidgetDao<TemplateWidgetEntity> {
     @Query("SELECT * FROM template_widgets WHERE id = :id")
     override suspend fun get(id: Int): TemplateWidgetEntity?
 
+    @Query("SELECT DISTINCT server_id FROM template_widgets")
+    override suspend fun getServerIds(): List<Int>
+
+    @Query("UPDATE template_widgets SET server_id = :newServerId WHERE server_id = :oldServerId")
+    override suspend fun updateServerId(oldServerId: Int, newServerId: Int)
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     override suspend fun add(entity: TemplateWidgetEntity)
 

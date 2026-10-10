@@ -45,6 +45,7 @@ import io.homeassistant.companion.android.util.initCrashSaving
 import io.homeassistant.companion.android.util.threadPolicyIgnoredViolationRules
 import io.homeassistant.companion.android.util.vmPolicyIgnoredViolationRules
 import io.homeassistant.companion.android.websocket.WebsocketBroadcastReceiver
+import io.homeassistant.companion.android.widgets.RestoredWidgetServerHandler
 import io.homeassistant.companion.android.widgets.button.ButtonWidget
 import io.homeassistant.companion.android.widgets.entity.EntityWidget
 import io.homeassistant.companion.android.widgets.mediaplayer.MediaPlayerControlsWidget
@@ -67,6 +68,9 @@ open class HomeAssistantApplication : Application() {
 
     @Inject
     lateinit var prefsRepository: PrefsRepository
+
+    @Inject
+    lateinit var restoredWidgetServerHandler: RestoredWidgetServerHandler
 
     @Inject
     lateinit var okHttpClientProvider: SuspendProvider<OkHttpClient>
@@ -356,6 +360,7 @@ open class HomeAssistantApplication : Application() {
             val mediaPlayerWidget = MediaPlayerControlsWidget()
             val templateWidget = TemplateWidget()
             TodoWidget().register(this@HomeAssistantApplication)
+            ioScope.launch { restoredWidgetServerHandler.reassignWidgetsOnServerChanges() }
 
             val screenIntentFilter = IntentFilter()
             screenIntentFilter.addAction(Intent.ACTION_SCREEN_ON)

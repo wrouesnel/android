@@ -10,6 +10,10 @@ private class FakeWidgetDao(vararg entities: TodoWidgetEntity) : WidgetDao<TodoW
     val stored = entities.associateBy { it.id }.toMutableMap()
 
     override suspend fun get(id: Int): TodoWidgetEntity? = stored[id]
+    override suspend fun getServerIds(): List<Int> = stored.values.map { it.serverId }.distinct()
+    override suspend fun updateServerId(oldServerId: Int, newServerId: Int) {
+        stored.replaceAll { _, entity -> if (entity.serverId == oldServerId) entity.copy(serverId = newServerId) else entity }
+    }
     override suspend fun add(entity: TodoWidgetEntity) {
         stored[entity.id] = entity
     }

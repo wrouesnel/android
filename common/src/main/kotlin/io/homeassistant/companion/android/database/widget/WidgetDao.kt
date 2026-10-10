@@ -5,6 +5,13 @@ import timber.log.Timber
 
 interface WidgetDao<T : WidgetEntity<T>> {
     suspend fun get(id: Int): T?
+
+    /** Returns the IDs of the servers that widgets of this type are configured for, without duplicates. */
+    suspend fun getServerIds(): List<Int>
+
+    /** Points every widget of this type configured for [oldServerId] at [newServerId] instead. */
+    suspend fun updateServerId(oldServerId: Int, newServerId: Int)
+
     suspend fun add(entity: T)
     suspend fun delete(id: Int)
     suspend fun deleteAll(ids: IntArray)

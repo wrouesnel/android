@@ -431,4 +431,44 @@ class PrefsRepositoryImplTest {
             coVerify { localStorage.putInt(key, currentVersionCode) }
         }
     }
+
+    @Nested
+    inner class RemovedRestoredServers {
+        private val stored = mutableMapOf<String, String>()
+
+        @BeforeEach
+        fun setupStorage() {
+            coEvery { localStorage.getString("removed_restored_servers") } answers { stored["removed_restored_servers"] }
+            coEvery { localStorage.putString("removed_restored_servers", any()) } answers {
+                stored["removed_restored_servers"] = secondArg()
+            }
+            coEvery { localStorage.remove("removed_restored_servers") } answers { stored.remove("removed_restored_servers") }
+        }
+
+        @Test
+        fun `Given removed servers saved when reading them then the same servers are returned`() = runTest {
+            val servers = listOf(RemovedRestoredServer(id = 1, urls = setOf("http://ha.local:8123/")))
+
+            repository.setRemovedRestoredServers(servers)
+
+            assertEquals(servers, repository.getRemovedRestoredServers())
+        }
+
+        @Test
+        fun `Given no removed servers saved when saving an empty list then the preference is removed`() = runTest {
+            repository.setRemovedRestoredServers(listOf(RemovedRestoredServer(id = 1, urls = emptySet())))
+
+            repository.setRemovedRestoredServers(emptyList())
+
+            assertEquals(emptyList<RemovedRestoredServer>(), repository.getRemovedRestoredServers())
+            coVerify(exactly = 1) { localStorage.remove("removed_restored_servers") }
+        }
+
+        @Test
+        fun `Given an unreadable stored value when reading removed servers then an empty list is returned`() = runTest {
+            stored["removed_restored_servers"] = "not json"
+
+            assertEquals(emptyList<RemovedRestoredServer>(), repository.getRemovedRestoredServers())
+        }
+    }
 }

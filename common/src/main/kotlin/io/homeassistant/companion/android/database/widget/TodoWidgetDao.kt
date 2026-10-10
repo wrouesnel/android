@@ -12,6 +12,12 @@ interface TodoWidgetDao : WidgetDao<TodoWidgetEntity> {
     @Query("SELECT * FROM todo_widget WHERE id = :id")
     override suspend fun get(id: Int): TodoWidgetEntity?
 
+    @Query("SELECT DISTINCT server_id FROM todo_widget")
+    override suspend fun getServerIds(): List<Int>
+
+    @Query("UPDATE todo_widget SET server_id = :newServerId WHERE server_id = :oldServerId")
+    override suspend fun updateServerId(oldServerId: Int, newServerId: Int)
+
     @Query("SELECT * FROM todo_widget WHERE id = :id")
     fun getFlow(id: Int): Flow<TodoWidgetEntity?>
 

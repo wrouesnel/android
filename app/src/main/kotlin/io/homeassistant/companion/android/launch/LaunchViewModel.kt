@@ -24,6 +24,7 @@ import io.homeassistant.companion.android.frontend.navigation.FrontendRoute
 import io.homeassistant.companion.android.frontend.navigation.FrontendTarget
 import io.homeassistant.companion.android.onboarding.OnboardingRoute
 import io.homeassistant.companion.android.onboarding.WearOnboardingRoute
+import io.homeassistant.companion.android.widgets.RestoredWidgetServerHandler
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -78,6 +79,7 @@ internal class LaunchViewModel @VisibleForTesting constructor(
     private val networkStatusMonitor: NetworkStatusMonitor,
     private val prefsRepository: PrefsRepository,
     private val appLockStateManager: AppLockStateManager,
+    private val restoredWidgetServerHandler: RestoredWidgetServerHandler,
     private val hasLocationTrackingSupport: Boolean,
     isAutomotive: Boolean,
     isFullFlavor: Boolean,
@@ -91,6 +93,7 @@ internal class LaunchViewModel @VisibleForTesting constructor(
         networkStatusMonitor: NetworkStatusMonitor,
         prefsRepository: PrefsRepository,
         appLockStateManager: AppLockStateManager,
+        restoredWidgetServerHandler: RestoredWidgetServerHandler,
         @LocationTrackingSupport hasLocationTrackingSupport: Boolean,
         @IsAutomotive isAutomotive: Boolean,
     ) : this(
@@ -100,6 +103,7 @@ internal class LaunchViewModel @VisibleForTesting constructor(
         networkStatusMonitor,
         prefsRepository,
         appLockStateManager,
+        restoredWidgetServerHandler,
         hasLocationTrackingSupport,
         isAutomotive = isAutomotive,
         isFullFlavor = BuildConfig.FLAVOR == "full",
@@ -291,7 +295,7 @@ internal class LaunchViewModel @VisibleForTesting constructor(
 
     private suspend fun cleanupServers() {
         // Remove any invalid servers (incomplete, partly migrated from another device)
-        serverManager.servers()
+        val invalidServers = serverManager.servers()
             .filter {
                 try {
                     serverManager.authenticationRepository(it.id)
@@ -301,7 +305,9 @@ internal class LaunchViewModel @VisibleForTesting constructor(
                     false
                 }
             }
-            .forEach { serverManager.removeServer(it.id) }
+        // Servers migrated from another device come back once the user signs in again, under a new ID
+        restoredWidgetServerHandler.rememberRemovedServers(invalidServers)
+        invalidServers.forEach { serverManager.removeServer(it.id) }
     }
 
     private fun handleNetworkState(state: NetworkState, target: FrontendTarget, serverId: Int): Boolean {

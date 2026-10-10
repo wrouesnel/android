@@ -20,6 +20,7 @@ import io.homeassistant.companion.android.frontend.navigation.FrontendTarget
 import io.homeassistant.companion.android.onboarding.OnboardingRoute
 import io.homeassistant.companion.android.onboarding.WearOnboardingRoute
 import io.homeassistant.companion.android.testing.unit.MainDispatcherJUnit5Extension
+import io.homeassistant.companion.android.widgets.RestoredWidgetServerHandler
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -52,6 +53,7 @@ class LaunchViewModelTest {
 
     private val workManager: WorkManager = mockk()
     private val appLockStateManager: AppLockStateManager = mockk(relaxed = true)
+    private val restoredWidgetServerHandler: RestoredWidgetServerHandler = mockk(relaxed = true)
 
     private lateinit var viewModel: LaunchViewModel
 
@@ -68,6 +70,7 @@ class LaunchViewModelTest {
             networkStatusMonitor,
             prefsRepository,
             appLockStateManager,
+            restoredWidgetServerHandler,
             hasLocationTrackingSupport,
             isAutomotive,
             isFullFlavor,
@@ -259,7 +262,7 @@ class LaunchViewModelTest {
     }
 
     @Test
-    fun `given invalid servers, when creating viewModel, then cleanup servers`() = runTest {
+    fun `given invalid servers, when creating viewModel, then remember them for restored widgets and cleanup servers`() = runTest {
         val invalidServer = Server(
             id = 1,
             _name = "Invalid Server",
@@ -295,6 +298,7 @@ class LaunchViewModelTest {
         createViewModel()
         advanceUntilIdle()
 
+        coVerify { restoredWidgetServerHandler.rememberRemovedServers(listOf(invalidServer)) }
         coVerify { serverManager.removeServer(1) }
         coVerify(exactly = 1) { serverManager.removeServer(any()) }
     }

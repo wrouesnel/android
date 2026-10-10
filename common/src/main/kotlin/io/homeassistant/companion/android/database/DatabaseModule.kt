@@ -7,6 +7,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import dagger.multibindings.ElementsIntoSet
 import io.homeassistant.companion.android.database.authentication.AuthenticationDao
 import io.homeassistant.companion.android.database.location.LocationHistoryDao
 import io.homeassistant.companion.android.database.migration.migrationPath
@@ -26,6 +27,7 @@ import io.homeassistant.companion.android.database.widget.MediaPlayerControlsWid
 import io.homeassistant.companion.android.database.widget.StaticWidgetDao
 import io.homeassistant.companion.android.database.widget.TemplateWidgetDao
 import io.homeassistant.companion.android.database.widget.TodoWidgetDao
+import io.homeassistant.companion.android.database.widget.WidgetDao
 import javax.inject.Singleton
 
 private const val DATABASE_NAME = "HomeAssistantDB"
@@ -66,6 +68,18 @@ internal object DatabaseModule {
 
     @Provides
     fun provideTemplateWidgetDao(database: AppDatabase): TemplateWidgetDao = database.templateWidgetDao()
+
+    /** Provides the DAOs of every widget type, for work that applies to all widgets. */
+    @Provides
+    @ElementsIntoSet
+    fun provideWidgetDaos(database: AppDatabase): Set<WidgetDao<*>> = setOf(
+        database.buttonWidgetDao(),
+        database.cameraWidgetDao(),
+        database.mediaPlayCtrlWidgetDao(),
+        database.staticWidgetDao(),
+        database.templateWidgetDao(),
+        database.todoWidgetDao(),
+    )
 
     @Provides
     fun provideLocationHistoryDao(database: AppDatabase): LocationHistoryDao = database.locationHistoryDao()

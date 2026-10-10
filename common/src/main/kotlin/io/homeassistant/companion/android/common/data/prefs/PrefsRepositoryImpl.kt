@@ -8,6 +8,7 @@ import io.homeassistant.companion.android.common.data.prefs.PrefsRepositoryImpl.
 import io.homeassistant.companion.android.common.util.GestureAction
 import io.homeassistant.companion.android.common.util.HAGesture
 import io.homeassistant.companion.android.common.util.di.SuspendProvider
+import io.homeassistant.companion.android.common.util.kotlinJsonMapper
 import io.homeassistant.companion.android.di.qualifiers.NamedIntegrationStorage
 import io.homeassistant.companion.android.di.qualifiers.NamedLegacyChangelogPref
 import io.homeassistant.companion.android.di.qualifiers.NamedThemesStorage
@@ -15,6 +16,8 @@ import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.serialization.SerializationException
+import timber.log.Timber
 
 private const val PREF_VER = "version"
 private const val PREF_NIGHT_MODE_THEME = "theme"
@@ -46,6 +49,7 @@ private const val PREF_SHOW_PRIVACY_HINT = "show_privacy_hint"
 private const val PREF_WAKE_WORD_ENABLED = "wake_word_enabled"
 private const val PREF_SELECTED_WAKE_WORD = "selected_wake_word"
 private const val PREF_ALLOWED_TAGS = "allowed_tags"
+private const val PREF_REMOVED_RESTORED_SERVERS = "removed_restored_servers"
 
 /**
  * This class ensure that when we use the local storage in [PrefsRepositoryImpl] the migrations has been made
@@ -457,5 +461,23 @@ internal class PrefsRepositoryImpl @Inject constructor(
 
     override suspend fun clearAllowedTags() {
         localStorage().remove(PREF_ALLOWED_TAGS)
+    }
+
+    override suspend fun getRemovedRestoredServers(): List<RemovedRestoredServer> {
+        val json = localStorage().getString(PREF_REMOVED_RESTORED_SERVERS) ?: return emptyList()
+        return try {
+            kotlinJsonMapper.decodeFromString<List<RemovedRestoredServer>>(json)
+        } catch (e: SerializationException) {
+            Timber.w(e, "Ignoring unreadable removed restored servers")
+            emptyList()
+        }
+    }
+
+    override suspend fun setRemovedRestoredServers(servers: List<RemovedRestoredServer>) {
+        if (servers.isEmpty()) {
+            localStorage().remove(PREF_REMOVED_RESTORED_SERVERS)
+        } else {
+            localStorage().putString(PREF_REMOVED_RESTORED_SERVERS, kotlinJsonMapper.encodeToString(servers))
+        }
     }
 }

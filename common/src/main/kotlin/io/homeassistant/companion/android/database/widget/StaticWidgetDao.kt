@@ -12,6 +12,12 @@ interface StaticWidgetDao : WidgetDao<StaticWidgetEntity> {
     @Query("SELECT * FROM static_widget WHERE id = :id")
     override suspend fun get(id: Int): StaticWidgetEntity?
 
+    @Query("SELECT DISTINCT server_id FROM static_widget")
+    override suspend fun getServerIds(): List<Int>
+
+    @Query("UPDATE static_widget SET server_id = :newServerId WHERE server_id = :oldServerId")
+    override suspend fun updateServerId(oldServerId: Int, newServerId: Int)
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     override suspend fun add(entity: StaticWidgetEntity)
 
